@@ -1,0 +1,36 @@
+---
+title: "Untitled"
+author: "Joaquin ML"
+date: "2024-06-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/lasbest/Documents/HELIX")
+```
+
+
+```{r load data & set variables}
+library(tableone)
+library(summarytools) # for summarizing variables
+library(tidyverse)
+library(knitr)
+library(dplyr)
+
+load("C:/Users/lasbest/Documents/HELIX/HELIX.RData")
+#kable(codebook, align="c")
+
+```
+
+```{r}
+helix_data <- covariates %>% 
+  left_join(exposome, by='ID') %>% 
+  left_join(phenotype, by='ID')
+```
+
+
+```{r}
+CreateTableOne(data=helix_data)
+```
+
