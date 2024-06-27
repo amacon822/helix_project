@@ -19,7 +19,7 @@ library(knitr)
 library(dplyr)
 
 load("C:/Users/lasbest/Documents/HELIX/HELIX.RData")
-#kable(codebook, align="c")
+kable(codebook, align="c")
 
 ```
 
@@ -31,6 +31,27 @@ helix_data <- covariates %>%
 
 
 ```{r}
-CreateTableOne(data=helix_data)
+helix_data <- helix_data %>% 
+  rename(PFHXS = hs_pfhxs_m_Log2,
+          PFNA = hs_pfna_m_Log2,
+          PFOA = hs_pfoa_m_Log2,
+          PFOS = hs_pfos_m_Log2,
+          PFUNDA = hs_pfunda_m_Log2,
+         BMI_zscore= hs_zbmi_who, 
+         Categorical_BMI=hs_bmi_c_cat)
+helix_data <- helix_data %>% 
+  rename(BiB=1,
+EDEN=2,
+INMA=3,
+KANC=4,
+MoBa=5,
+RHEA=6,
+)
+
+vars_of_interest <- c("ID", "h_cohort", "e3_sex_None", "e3_yearbir_None", "h_mbmi_None", "hs_wgtgain_None", "e3_gac_None", "h_age_None", "h_edumc_None", "h_native_None", "h_parity_None", "hs_child_age_None", "hs_c_height_None", "PFHXS", "PFNA", "PFOA", "PFOS", "PFUNDA", "BMI_zscore", "Categorical_BMI")
+
+catVars <- c("h_cohort", "Categorical_BMI", "e3_sex_None", "h_edumc_None")
+
+CreateTableOne(vars = vars_of_interest, data=helix_data, factorVars = catVars)
 ```
 
