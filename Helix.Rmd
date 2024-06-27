@@ -1,0 +1,46 @@
+---
+title: "Helix Project"
+author: "Amanda Gabrielle Concepcion"
+date: "2024-06-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r merge data, error =FALSE}
+library(dplyr)
+library(tidyverse)
+helix_data <- covariates %>%
+  left_join(phenotype, by='ID') %>%  
+  left_join(exposome, by='ID')
+
+helix_data <- helix_data %>% 
+  rename(PFHXS = hs_pfhxs_m_Log2,
+          PFNA = hs_pfna_m_Log2,
+          PFOA = hs_pfoa_m_Log2,
+          PFOS = hs_pfos_m_Log2,
+          PFUNDA = hs_pfunda_m_Log2, 
+         BMI_zscore = hs_zbmi_who, 
+         Categorical_BMI = hs_bmi_c_cat)
+```
+
+```{r summary table one}
+library(tableone)
+myVars <- c("ID", "h_cohort","e3_sex_None", "e3_yearbir_None", "h_mbmi_None", "hs_wftgain_None", "e3_gac_None", "h_age_None", "h_edumc_None", "h_native_None", "h_parity_None", "hs_child_age_None", "hs_c_height_None", "PFHXS", "PFNA", "PFOA", "PFOS", "PFUNDA", "BMI_zscore", "Categorical_BMI")
+
+catVars <- c("h_cohort", "Categorical_BMI", "e3_sex_None", "h_edumc_None")
+
+tab1 <- CreateTableOne(data = helix_data, vars = myVars, factorVars = catVars)
+
+print(tab1, showAllLevels = TRUE)
+
+summary(tab1$ContTable)
+```
+
+```{r table one, stratified}
+tab2 <- CreateTableOne(vars = myVars, strata = "h_cohort" , data = helix_data, factorVars = catVars)
+print(tab2, showAllLevels = TRUE)
+```
+
