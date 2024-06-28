@@ -1,0 +1,107 @@
+---
+title: "tableone"
+output:
+  html_document: default
+date: "2024-06-27"
+---
+
+```{r setup, include=FALSE, error=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, include=FALSE, error=FALSE}
+library(tidyverse)
+library(table1)
+load("C:/Users/xinbo/OneDrive/Desktop/LA's BeST/HELIX (2).RData")
+
+```
+
+```{r full table, error=FALSE,results="asis"}
+#overall distribution
+
+ex=exposome%>%
+  select("ID", "hs_pfhxs_m_Log2", "hs_pfna_m_Log2", "hs_pfoa_m_Log2", "hs_pfos_m_Log2", "hs_pfunda_m_Log2")%>%
+  rename(PFHXS = hs_pfhxs_m_Log2,
+          PFNA = hs_pfna_m_Log2,
+          PFOA = hs_pfoa_m_Log2,
+          PFOS = hs_pfos_m_Log2,
+          PFUNDA = hs_pfunda_m_Log2)
+ph=phenotype%>%
+  select("ID","hs_zbmi_who","hs_bmi_c_cat")%>%
+  rename(BMI_zscore= hs_zbmi_who, 
+         categorical_bmi=hs_bmi_c_cat)%>%
+  mutate(categorical_bmi=fct_recode(categorical_bmi, 
+                                    Underweight="1",
+                                    Normal="2", 
+                                    Overweight="3", 
+                                    Obese="4"))
+
+co=covariates%>%
+  rename(cohort=h_cohort,
+         sex=e3_sex_None, 
+         birth_year=e3_yearbir_None, 
+         maternal_bmi=h_mbmi_None, 
+         maternal_wtgain=hs_wgtgain_None, 
+         gestational_age_at_birth=e3_gac_None, 
+         maternal_age=h_age_None, 
+         maternal_education_level=h_edumc_None, 
+         number_native_parents=h_native_None, 
+         prior_parity=h_parity_None, 
+         child_age=hs_child_age_None, 
+         child_height=hs_c_height_None, 
+         child_weight=hs_c_weight_None)%>%
+  mutate(maternal_education_level=fct_recode(maternal_education_level, 
+                                             'Primary School'="1",
+                                             'Secondary School'="2",
+                                            'University Degree or Higher'="3"))%>%
+  #will it cause issues to write it like that?
+  mutate(prior_parity=fct_recode(prior_parity, `0`="0", `1`="1", `>1`="2"))%>%
+  #does fct_recode change the order of the underlying factors?
+  mutate(cohort=fct_recode(cohort, BiB="1", EDEN="2", INMA="3", KANC="4", MoBa="5", RHEA="6"))
+merged=merge(co,ph,by="ID")
+merged2=merge(merged, ex,by="ID")
+
+#mytable=CreateTableOne(data=merged) how to turn into a table?
+#kableone(mytable) how to indent the levels?
+
+label(merged$birth_year)='Birth Year'
+label(merged$BMI_zscore)='BMI z-score'
+label(merged$cohort)='Cohort'
+label(merged$sex)='Sex'
+label(merged$maternal_bmi)='Maternal BMI'
+label(merged$maternal_wtgain)='Maternal Weight Gain'
+label(merged$gestational_age_at_birth)='Gestational Age at Birth'
+label(merged$maternal_age)='Maternal Age'
+label(merged$maternal_education_level)='Maternal Education Level'
+label(merged$number_native_parents)='Number of Native Parents'
+label(merged$prior_parity)='Prior Parity'
+label(merged$child_age)='Child Age'
+label(merged$child_height)='Child Height'
+label(merged$child_weight)='Child Weight'
+#can I do upper case inside the variable?
+
+table1(~ BMI_zscore+ cohort+sex+birth_year+maternal_bmi+maternal_wtgain+gestational_age_at_birth+maternal_age+maternal_education_level+number_native_parents+prior_parity+child_age+child_height+child_weight,
+       data=merged, 
+       render.continuous=c("Mean (SD)"), 
+       caption="Distribution Within the HELIX Subcohort")
+```
+
+```{r}
+#distribution stratified by cohort
+
+table1(~ BMI_zscore+sex+birth_year+maternal_bmi+maternal_wtgain+gestational_age_at_birth+maternal_age+maternal_education_level+number_native_parents+prior_parity+child_age+child_height+child_weight| cohort, 
+       data=merged, 
+       render.continuous=c("Mean (SD)"), 
+       caption="Distribution Within the HELIX Subcohort Stratified by Cohort")
+
+#stratified=CreateTableOne(data=merged2, strata = "cohort")
+#kableone(stratified)
+```
+```{r}
+
+#mytab <- CreateTableOne(vars=c('sex','birth_year','maternal_bmi'), data=merged)
+#tab3Mat <- print(mytab, exact = "stage", quote = FALSE,
+                 #noSpaces = TRUE, printToggle = FALSE)
+#write.csv(tab3Mat, file = "myTable1.csv")
+```
+
+
