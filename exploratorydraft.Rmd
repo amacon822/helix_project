@@ -1,0 +1,134 @@
+---
+title: "tableone"
+output:
+  html_document: default
+date: "2024-06-27"
+---
+
+```{r setup, include=FALSE, error=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, include=FALSE, error=FALSE}
+library(tidyverse)
+library(table1)
+library(tableone)
+load("C:/Users/xinbo/OneDrive/Desktop/LA's BeST/HELIX (2).RData")
+
+```
+
+```{r full table, error=FALSE}
+#overall distribution
+
+ex=exposome%>%
+  select("ID", "hs_pfhxs_m_Log2", "hs_pfna_m_Log2", "hs_pfoa_m_Log2", "hs_pfos_m_Log2", "hs_pfunda_m_Log2")%>%
+  rename(PFHXS = hs_pfhxs_m_Log2,
+          PFNA = hs_pfna_m_Log2,
+          PFOA = hs_pfoa_m_Log2,
+          PFOS = hs_pfos_m_Log2,
+          PFUNDA = hs_pfunda_m_Log2)
+pfas=c("PFHXS","PFNA","PFOA","PFOS","PFUNDA")
+ph=phenotype%>%
+  select("ID","hs_zbmi_who","hs_bmi_c_cat")%>%
+  rename(BMI_zscore= hs_zbmi_who, 
+         categorical_bmi=hs_bmi_c_cat)%>%
+  mutate(categorical_bmi=fct_recode(categorical_bmi, 
+                                    Underweight="1",
+                                    Normal="2", 
+                                    Overweight="3", 
+                                    Obese="4"))
+
+co=covariates%>%
+  rename(cohort=h_cohort,
+         sex=e3_sex_None, 
+         birth_year=e3_yearbir_None, 
+         maternal_bmi=h_mbmi_None, 
+         maternal_wtgain=hs_wgtgain_None, 
+         gestational_age_at_birth=e3_gac_None, 
+         maternal_age=h_age_None, 
+         maternal_education_level=h_edumc_None, 
+         number_native_parents=h_native_None, 
+         prior_parity=h_parity_None, 
+         child_age=hs_child_age_None, 
+         child_height=hs_c_height_None, 
+         child_weight=hs_c_weight_None)%>%
+  mutate(maternal_education_level=fct_recode(maternal_education_level, 
+                                             'Primary School'="1",
+                                             'Secondary School'="2",
+                                            'University Degree or Higher'="3"))%>%
+  #will it cause issues to write it like that?
+  mutate(prior_parity=fct_recode(prior_parity, `0`="0", `1`="1", `>1`="2"))%>%
+  #does fct_recode change the order of the underlying factors?
+  mutate(cohort=fct_recode(cohort, BiB="1", EDEN="2", INMA="3", KANC="4", MoBa="5", RHEA="6"))%>%
+  mutate(sex=fct_recode(sex, Female="female", Male="male"))
+merged=merge(co,ph,by="ID")
+merged2=merge(merged, ex,by="ID")
+
+#mytable=CreateTableOne(data=merged) how to turn into a table?
+#kableone(mytable) how to indent the levels?
+
+label(merged2$birth_year)='Birth Year'
+label(merged2$cohort)='Cohort'
+label(merged2$sex)='Sex'
+label(merged2$maternal_bmi)='Maternal BMI'
+label(merged2$maternal_wtgain)='Maternal Weight Gain (kg)'
+label(merged2$gestational_age_at_birth)='Gestational Age at Birth (wks)'
+label(merged2$maternal_age)='Maternal Age (yrs)'
+label(merged2$maternal_education_level)='Maternal Education Level'
+label(merged2$number_native_parents)='Number of Native Parents'
+label(merged2$prior_parity)='Prior Parity'
+label(merged2$child_age)='Child Age (yrs)'
+label(merged2$child_height)='Child Height (m)'
+label(merged2$child_weight)='Child Weight (kg)'
+label(merged2$categorical_bmi)='BMI Category'
+label(merged2$BMI_zscore)='BMI z-score'
+label(merged2$PFHXS)='PFHXS (ng/mL)*'
+label(merged2$PFNA)='PFNA (ng/mL)*'
+label(merged2$PFOA)='PFOA (ng/mL)*'
+label(merged2$PFOS)='PFOS (ng/mL)*'
+label(merged2$PFUNDA)='PFUNDA(ng/mL)*'
+#can I delete all these and just do it inside the variable instead?
+
+#include mean/sd of the PFAS like that or add in a row of the mean/sd of the original data or geometric mean?
+table1(~ PFHXS+PFNA+PFOA+PFOS+PFUNDA+BMI_zscore+categorical_bmi+cohort+sex+birth_year+maternal_bmi+maternal_wtgain+gestational_age_at_birth+maternal_age+maternal_education_level+number_native_parents+prior_parity+child_age+child_height+child_weight,
+       data=merged2, 
+       render.continuous=c("Mean (SD)"), 
+       caption="Mean (Standard Deviation) or Count (Proportion)",
+       footnote="*Calculated using base 2 log transformed data")
+```
+
+```{r}
+#distribution stratified by cohort
+
+table1(~ PFHXS+PFNA+PFOA+PFOS+PFUNDA+BMI_zscore+categorical_bmi+sex+birth_year+maternal_bmi+maternal_wtgain+gestational_age_at_birth+maternal_age+maternal_education_level+number_native_parents+prior_parity+child_age+child_height+child_weight| cohort, 
+       data=merged2, 
+       render.continuous=c("Mean (SD)"), 
+       caption="Mean (Standard Deviation) or Count (Proportion) Stratified by Cohort",
+       footnote="*Calculated using base 2 log transformed data")
+
+#stratified=CreateTableOne(data=merged2, strata = "cohort")
+#kableone(stratified)
+```
+
+```{r}
+table1(~ PFHXS+PFNA+PFOA+PFOS+PFUNDA+BMI_zscore+sex+birth_year+maternal_bmi+maternal_wtgain+gestational_age_at_birth+maternal_age+maternal_education_level+number_native_parents+prior_parity+child_age+child_height+child_weight| categorical_bmi, 
+       data=merged2, 
+       render.continuous=c("Mean (SD)"), 
+       caption="Mean (Standard Deviation) or Count (Proportion) Stratified by BMI Category",
+       footnote="*Calculated using base 2 log transformed data")
+```
+```{r}
+table1(~ PFHXS+PFNA+PFOA+PFOS+PFUNDA+BMI_zscore+categorical_bmi+sex+birth_year+maternal_bmi+maternal_wtgain+gestational_age_at_birth+maternal_age+number_native_parents+prior_parity+child_age+child_height+child_weight| maternal_education_level, 
+       data=merged2, 
+       render.continuous=c("Mean (SD)"), 
+       caption="Mean (Standard Deviation) or Count (Proportion) Stratified by Maternal Education Level",
+       footnote="*Calculated using base 2 log transformed data")
+```
+
+```{r}
+
+#mytab <- CreateTableOne(vars=c('sex','birth_year','maternal_bmi'), data=merged)
+#tab3Mat <- print(mytab, exact = "stage", quote = FALSE,
+                 #noSpaces = TRUE, printToggle = FALSE)
+#write.csv(tab3Mat, file = "myTable1.csv")
+```
+
